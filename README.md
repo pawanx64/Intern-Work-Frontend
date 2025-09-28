@@ -65,25 +65,6 @@ npm run dev
 # Runs on 👉 http://localhost:5173
 ```
 
----
-
-## 🔗 API Endpoints
-
-```
-GET    /api/health                → Fetch all health data
-POST   /api/health/:metric/target → Set a target (steps, water, sleep)
-PUT    /api/health/:metric/progress → Update progress
-```
-
-**Example:**
-
-```
-POST http://localhost:5000/api/health/steps/target
-Body: { "target": 10000 }
-
-PUT http://localhost:5000/api/health/steps/progress
-Body: { "progress": 2500 }
-```
 
 ---
 
