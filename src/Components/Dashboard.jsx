@@ -51,6 +51,8 @@ function ProgressCircle({ percent, color }) {
   );
 }
 
+
+
 const listVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: (i) => ({
@@ -61,14 +63,23 @@ const listVariants = {
 };
 
 // Health Goal Card
-function HealthGoal({ percent, color, title, desc }) {
+// Health Goal Card with dismiss button
+function HealthGoal({ percent, color, title, desc, onDismiss }) {
   return (
-    <div className="flex items-center gap-3 bg-white p-3 rounded-xl shadow-sm">
-      <ProgressCircle percent={percent} color={color} />
-      <div>
-        <h4 className="font-semibold text-sm text-gray-800">{title}</h4>
-        <p className="text-xs text-gray-500">{desc}</p>
+    <div className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm">
+      <div className="flex items-center gap-3">
+        <ProgressCircle percent={percent} color={color} />
+        <div>
+          <h4 className="font-semibold text-sm text-gray-800">{title}</h4>
+          <p className="text-xs text-gray-500">{desc}</p>
+        </div>
       </div>
+      <button
+        onClick={onDismiss}
+        className="text-gray-400 hover:text-red-500 transition"
+      >
+        ✕
+      </button>
     </div>
   );
 }
@@ -100,6 +111,43 @@ export const Dashboard = ({ refreshKey }) => {
     mood: { progress: null },
   });
 
+   const [recommendations, setRecommendations] = useState([]);
+
+const dismissGoal = async (goalId) => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/recommendations/dismiss/${goalId}`, {
+      method: "POST",
+    });
+    const data = await res.json();
+
+    if (data.task && data.task.title) {
+      // dynamically update the UI with new title/substitution
+      setHealth((prev) => {
+        const updated = { ...prev };
+
+        if (goalId === "water") {
+          updated.water_intake = { ...updated.water_intake, customTitle: data.task.title };
+        }
+        if (goalId === "sleep") {
+          updated.sleep = { ...updated.sleep, customTitle: data.task.title };
+        }
+        if (goalId === "steps") {
+          updated.steps = { ...updated.steps, customTitle: data.task.title };
+        }
+        if (goalId === "mood") {
+          updated.mood = { ...updated.mood, customTitle: data.task.title };
+        }
+
+        return updated;
+      });
+    }
+  } catch (err) {
+    console.error("Error dismissing goal:", err);
+  }
+};
+
+
+
   // ✅ Fetch health data from backend
   const fetchHealth = async () => {
     try {
@@ -120,6 +168,24 @@ export const Dashboard = ({ refreshKey }) => {
 
   useEffect(() => {
     fetchHealth();
+  }, [refreshKey]);
+
+
+  
+  // Fetch recommendations
+  const fetchRecommendations = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/recommendations");
+      const data = await res.json();
+      setRecommendations(data);
+    } catch (err) {
+      console.error("Error fetching recommendations:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchHealth();
+    fetchRecommendations();
   }, [refreshKey]);
 
   // ✅ Save mood to backend + update frontend + MongoDB
@@ -284,69 +350,74 @@ export const Dashboard = ({ refreshKey }) => {
         </h3>
 
         <motion.div
-          className="flex flex-col gap-3"
-          initial="hidden"
-          animate="visible"
-        >
-          {[
-            {
-              id: "water",
-              percent: calcPercent(
-                health.water_intake?.progress ?? 0,
-                health.water_intake?.target ?? 0
-              ),
-              color: "#10b981",
-              title: `Drink ${
-                health.water_intake?.target ?? 0
-              } glasses of water`,
-              desc: `${
-                (health.water_intake?.target ?? 0) -
-                (health.water_intake?.progress ?? 0)
-              } more to go`,
-            },
-            {
-              id: "sleep",
-              percent: calcPercent(
-                health.sleep?.progress ?? 0,
-                health.sleep?.target ?? 0
-              ),
-              color: "#6366f1",
-              title: `Sleep ${health.sleep?.target ?? 0} hours`,
-              desc: `You slept ${health.sleep?.progress ?? 0}h out of ${
-                health.sleep?.target ?? 0
-              }h`,
-            },
-            {
-              id: "steps",
-              percent: calcPercent(
-                health.steps?.progress ?? 0,
-                health.steps?.target ?? 0
-              ),
-              color: "#ec4899",
-              title: `Walk ${health.steps?.target ?? 0} steps`,
-              desc: `${
-                (health.steps?.target ?? 0) - (health.steps?.progress ?? 0)
-              } steps left`,
-            },
-          ].map((goal, i) => (
-            <motion.div
-              key={goal.id}
-              custom={i}
-              variants={listVariants}
-              whileHover={{
-                scale: 1.02,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              }}
-            >
-              <HealthGoal
-                percent={goal.percent}
-                color={goal.color}
-                title={goal.title}
-                desc={goal.desc}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
+  className="flex flex-col gap-3"
+  initial="hidden"
+  animate="visible"
+>
+  {[
+    {
+      id: "water",
+      percent: calcPercent(
+        health.water_intake?.progress ?? 0,
+        health.water_intake?.target ?? 0
+      ),
+      color: "#10b981",
+      title: `Drink ${health.water_intake?.target ?? 0} glasses of water`,
+      desc: `${
+        (health.water_intake?.target ?? 0) -
+        (health.water_intake?.progress ?? 0)
+      } more to go`,
+    },
+    {
+      id: "sleep",
+      percent: calcPercent(
+        health.sleep?.progress ?? 0,
+        health.sleep?.target ?? 0
+      ),
+      color: "#6366f1",
+      title: `Sleep ${health.sleep?.target ?? 0} hours`,
+      desc: `You slept ${health.sleep?.progress ?? 0}h out of ${
+        health.sleep?.target ?? 0
+      }h`,
+    },
+    {
+      id: "steps",
+      percent: calcPercent(
+        health.steps?.progress ?? 0,
+        health.steps?.target ?? 0
+      ),
+      color: "#ec4899",
+      title: `Walk ${health.steps?.target ?? 0} steps`,
+      desc: `${
+        (health.steps?.target ?? 0) - (health.steps?.progress ?? 0)
+      } steps left`,
+    },
+  ]
+    // ✅ filter out completed goals
+    .filter((goal) => goal.percent < 100)
+    .map((goal, i) => (
+      <motion.div
+        key={goal.id}
+        custom={i}
+        variants={listVariants}
+        whileHover={{
+          scale: 1.02,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
+      >
+        <HealthGoal
+          percent={goal.percent}
+          color={goal.color}
+          title={health[goal.id]?.customTitle || goal.title}
+          desc={goal.desc}
+          onDismiss={() => dismissGoal(goal.id)}
+        />
+      </motion.div>
+    ))}
+</motion.div>
+
+
+
         {/* Yoga Banner */}
   <div className="bg-white rounded-2xl shadow-md overflow-hidden relative">
     <img
