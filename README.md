@@ -65,6 +65,7 @@ npm run dev
 # Runs on 👉 http://localhost:5173
 ```
 
+<<<<<<< HEAD
 ---
 
 ## 🔗 API Endpoints
@@ -84,6 +85,8 @@ Body: { "target": 10000 }
 PUT http://localhost:5000/api/health/steps/progress
 Body: { "progress": 2500 }
 ```
+=======
+>>>>>>> 5152dbbbd7e28e8fc965c8813c76eb0d25e6c058
 
 ---
 
@@ -96,6 +99,7 @@ Body: { "progress": 2500 }
 
 ---
 
+<<<<<<< HEAD
 ## 🤝 Contributing
 
 1. Fork the repo
@@ -109,4 +113,7 @@ Body: { "progress": 2500 }
 ## 📜 License
 
 MIT License © 2025
+=======
+
+>>>>>>> 5152dbbbd7e28e8fc965c8813c76eb0d25e6c058
 
